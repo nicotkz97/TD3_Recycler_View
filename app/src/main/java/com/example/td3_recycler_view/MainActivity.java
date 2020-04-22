@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
@@ -41,16 +42,15 @@ public class MainActivity extends AppCompatActivity {
         gson = new GsonBuilder()
                 .setLenient()
                 .create();
+        List<Pokemon> pokemonList = getDataFromCash();
 
         if(pokemonList != null){
         showList(pokemonList);
         }
-        else {
-            makeApicall();
-        }
+        else makeApiCall();
 
     }
-    List<Pokemon> pokemonList = getDataFromCash();
+
     private List<Pokemon> getDataFromCash() {
 
      String jsonPokemon = sharedPreferences.getString(Constants.KEY_POKEMON_LIST, null);
@@ -81,27 +81,27 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void makeApicall() {
-
+    private void makeApiCall(){
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .build();
 
-        PokeApi PokeApi = retrofit.create(PokeApi.class);
+        PokeApi pokeApi = retrofit.create(PokeApi.class);
 
-        Call<RestPokemonResponse> call = PokeApi.getPokemonResponse();
+
+        Call<RestPokemonResponse> call = pokeApi.getPokemonResponse();
         call.enqueue(new Callback<RestPokemonResponse>() {
             @Override
             public void onResponse(Call<RestPokemonResponse> call, Response<RestPokemonResponse> response) {
                 if(response.isSuccessful() && response.body() != null){
+
                     List<Pokemon> pokemonList = response.body().getResults();
                     saveList(pokemonList);
                     showList(pokemonList);
-                }
+                }else{
 
-                else {
                     showError();
                 }
             }
@@ -110,16 +110,15 @@ public class MainActivity extends AppCompatActivity {
             public void onFailure(Call<RestPokemonResponse> call, Throwable t) {
 
                 showError();
-
             }
         });
+
     }
 
     private void saveList(List<Pokemon> pokemonList) {
         String jsonString = gson.toJson(pokemonList);
         sharedPreferences
                 .edit()
-                .putInt("cle_integer", 3)
                 .putString(Constants.KEY_POKEMON_LIST, "jsonString")
                 .apply();
 
